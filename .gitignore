@@ -1,0 +1,8 @@
+target/
+boot/
+
+# Eclipse files
+/.settings/
+.classpath
+.project
+.scala_dependencies
