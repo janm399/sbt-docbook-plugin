@@ -156,6 +156,12 @@ object DocBookPlugin extends Plugin {
     mainDocBookFiles := Seq.empty,
     docBookSourceDirectory <<= sourceDirectory(_ / "main" / "docbook"),
     
+    //default value for the XSL-FO stylesheet. Download the stylesheet to your
+    //local hard drive and override this setting to speed up
+    //transformation significantly
+    docBookStyleSheet := new URI(
+      "http://docbook.sourceforge.net/release/xsl/current/fo/docbook.xsl"),
+    
     //define xsl-fo task
     xslFoTask <<= (mainDocBookFiles, docBookSourceDirectory,
         sourceDirectories in Compile, target, docBookStyleSheet,
