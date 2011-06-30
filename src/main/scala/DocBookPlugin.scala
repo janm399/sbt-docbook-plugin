@@ -88,16 +88,30 @@ object DocBookPlugin extends Plugin {
   private def transformDocBook(src: File, dst: File, styleSheet: URI,
       cp: Classpath, log: Logger) {
     transform(src, dst, log) {
-      Fork.java(None, Seq[String](
+      //write XSL-FO to temporary file. this avoids a bug in Saxon
+      //that caused spaces in the output filename to be converted to
+      //an escaped sequence (%20)
+      val temp = File.createTempFile("sbt-docbook-plugin-", ".fo")
+      val code = Fork.java(None, Seq[String](
         "-cp", cp.files.mkString(File.pathSeparator),
         "com.icl.saxon.StyleSheet",
         "-x", "org.apache.xml.resolver.tools.ResolvingXMLReader",
         "-y", "org.apache.xml.resolver.tools.ResolvingXMLReader",
         "-r", "org.apache.xml.resolver.tools.CatalogResolver",
-        "-o", dst.toString,
+        "-o", temp.toString,
         src.toString,
         styleSheet.toString
       ), log)
+      
+      //copy temporary file to real output file
+      temp #> dst !
+      
+      //delete temporary file (if this files it will be deleted on exit)
+      if (!temp.delete()) {
+        temp.deleteOnExit()
+      }
+      
+      code
     }
   }
   
