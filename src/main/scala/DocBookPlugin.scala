@@ -17,6 +17,7 @@ package de.undercouch.sbt.docbook
 import sbt._
 import Keys._
 import java.io.File
+import Project.Initialize
 
 /**
  * Provides tasks to compile DocBook XML files to various output formats
@@ -28,14 +29,19 @@ object DocBookPlugin extends Plugin {
   
   //declare tasks
   val xslFoTask = TaskKey[Seq[File]]("xsl-fo",
-      "Transforms DocBook files to XSL-FO files")
+      "Transforms DocBook XML files to XSL-FO files")
+  val htmlTask = TaskKey[Seq[File]]("html",
+      "Transforms DocBook XML files to single HTML files")
   val pdfTask = TaskKey[Seq[File]]("pdf",
-      "Transforms DocBook files to PDF files")
+      "Transforms DocBook XML files to PDF files (using FOP)")
   
   //declare settings
   val mainDocBookFiles = SettingKey[Seq[File]]("main-docbook-files")
   val docBookSourceDirectory = SettingKey[File]("docbook-source-directory")
-  val docBookStyleSheet = SettingKey[URI]("docbook-stylesheet")
+  
+  val docBookStyleSheetBase = SettingKey[String]("docbook-stylesheet-base")
+  val docBookXslFoStyleSheet = SettingKey[String]("docbook-xslfo-stylesheet")
+  val docBookHtmlStyleSheet = SettingKey[String]("docbook-html-stylesheet")
   
   /**
    * Returns the DocBook files to compile. Searches the directory
@@ -78,17 +84,19 @@ object DocBookPlugin extends Plugin {
   }
   
   /**
-   * Transforms the given DocBook XML file to a XSL-FO file
+   * Transforms the given DocBook XML file to another single file (using
+   * the given stylesheet)
    * @param src the DocBook XML file
-   * @param dst the target XSL-FO file
-   * @param styleSheet an URI to a stylesheet to use during transformation
+   * @param dst the target file
+   * @param styleSheet an URI to a stylesheet or the name of a
+   * local stylesheet file
    * @param cp the classpath required during transformation
    * @param log the logger
    */
-  private def transformDocBook(src: File, dst: File, styleSheet: URI,
+  private def transformDocBook(src: File, dst: File, styleSheet: String,
       cp: Classpath, log: Logger) {
     transform(src, dst, log) {
-      //write XSL-FO to temporary file. this avoids a bug in Saxon
+      //write output to temporary file. this avoids a bug in Saxon
       //that caused spaces in the output filename to be converted to
       //an escaped sequence (%20)
       val temp = File.createTempFile("sbt-docbook-plugin-", ".fo")
@@ -99,8 +107,7 @@ object DocBookPlugin extends Plugin {
         "-y", "org.apache.xml.resolver.tools.ResolvingXMLReader",
         "-r", "org.apache.xml.resolver.tools.CatalogResolver",
         "-o", temp.toString,
-        src.toString,
-        styleSheet.toString
+        src.toString, styleSheet
       ), log)
       
       //copy temporary file to real output file
@@ -134,11 +141,11 @@ object DocBookPlugin extends Plugin {
   }
   
   /**
-   * <p>Creates a target file out of the given source file. Uses the source file's
-   * name, changes it extension to <code>ext</code> and puts that file into
-   * the given target directory.</p>
-   * <p>Example: <code>makeTargetFile(file("src/foo.txt"), file("target"), ".bar")</code>
-   * will return <code>file("target/foo.bar")</code></p>
+   * <p>Creates a target file out of the given source file. Uses the source
+   * file's name, changes it extension to <code>ext</code> and puts that file
+   * into the given target directory.</p>
+   * <p>Example: <code>makeTargetFile(file("src/foo.txt"), file("target"),
+   * ".bar")</code> will return <code>file("target/foo.bar")</code></p>
    * @param src the source file
    * @param target the target directory
    * @param ext the new extension to use
@@ -151,30 +158,41 @@ object DocBookPlugin extends Plugin {
     target / o
   }
   
+  private def genericTask(targetName: String, ext: String)(mdbf: Seq[File],
+      docBookSource: File, sources: Seq[File], t: File,
+      styleSheetBase: String, styleSheet: String,
+      cp: Classpath, s: TaskStreams): Seq[File] = {
+    s.log.info("Transforming DocBook XML to " + targetName + ":")
+    val mdbfFiles = if (!mdbf.isEmpty) mdbf else getMainDocBookFiles(docBookSource, sources)
+    val conversions = mdbfFiles map { mf => (mf, makeTargetFile(mf, t, ext)) }
+    conversions map { c =>
+      transformDocBook(c._1, c._2, styleSheetBase + styleSheet, cp, s.log)
+      c._2
+    }
+  }
+  
+  private def makeGenericTask(targetName: String, ext: String,
+      styleSheet: SettingKey[String]): Initialize[Task[Seq[File]]] =
+    (mainDocBookFiles, docBookSourceDirectory, sourceDirectories in Compile,
+        target, docBookStyleSheetBase, styleSheet,
+        externalDependencyClasspath in Compile, streams) map
+        genericTask(targetName, ext)
+  
   override val settings = inConfig(DocBook)(Seq(
     //define default values
     mainDocBookFiles := Seq.empty,
     docBookSourceDirectory <<= sourceDirectory(_ / "main" / "docbook"),
     
-    //default value for the XSL-FO stylesheet. Download the stylesheet to your
-    //local hard drive and override this setting to speed up
+    //default values for the docbook stylesheets. Download the stylesheets
+    //to your local hard drive and override these settings to speed up
     //transformation significantly
-    docBookStyleSheet := new URI(
-      "http://docbook.sourceforge.net/release/xsl/current/fo/docbook.xsl"),
+    docBookStyleSheetBase := "http://docbook.sourceforge.net/release/xsl/current/",
+    docBookXslFoStyleSheet := "fo/docbook.xsl",
+    docBookHtmlStyleSheet := "html/docbook.xsl",
     
-    //define xsl-fo task
-    xslFoTask <<= (mainDocBookFiles, docBookSourceDirectory,
-        sourceDirectories in Compile, target, docBookStyleSheet,
-        externalDependencyClasspath in Compile, streams) map {
-      (mdbf, docBookSource, sources, t, styleSheet, cp, s) =>
-      
-      s.log.info("Transforming DocBook XML to XSL-FO:")
-      val mdbfFiles = if (!mdbf.isEmpty) mdbf else getMainDocBookFiles(docBookSource, sources)
-      val conversions = mdbfFiles map { mf => (mf, makeTargetFile(mf, t, ".fo")) }
-      conversions foreach { c => transformDocBook(c._1, c._2, styleSheet, cp, s.log) }
-      
-      conversions map { _._2 }
-    },
+    //define tasks
+    xslFoTask <<= makeGenericTask("XSL-FO", ".fo", docBookXslFoStyleSheet),
+    htmlTask <<= makeGenericTask("HTML (single file)", ".html", docBookHtmlStyleSheet),
     
     //define pdf task
     pdfTask <<= (xslFoTask, target, externalDependencyClasspath in Compile,
@@ -206,6 +224,7 @@ object DocBookPlugin extends Plugin {
     sourceFilter <<= sourceFilter(_ || "*.xml"),
     
     xslFoTask <<= (xslFoTask in DocBook).identity,
+    htmlTask <<= (htmlTask in DocBook).identity,
     pdfTask <<= (pdfTask in DocBook).identity
   )
 }
