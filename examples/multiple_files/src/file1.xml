@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE article PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN"
+  "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd">
+<article>
+  <title>File 1</title>
+  <articleinfo>
+    <author>
+      <firstname>Michel</firstname>
+      <surname>Krämer</surname>
+    </author>
+  </articleinfo>
+  <section>
+    <title>File 1</title>
+    <simpara>This is the first file of the multiple-files example</simpara>
+  </section>
+</article>
