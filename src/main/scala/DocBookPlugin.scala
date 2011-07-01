@@ -232,41 +232,38 @@ object DocBookPlugin extends Plugin {
   }
   
   private def genericTask(targetName: String, ext: String)(mdbf: Seq[File],
-      docBookSource: File, sources: Seq[File], t: File,
-      styleSheetBase: String, styleSheet: String,
+      docBookSource: File, sources: Seq[File], t: File, styleSheet: String,
       cp: Classpath, s: TaskStreams): Seq[File] = {
     s.log.info("Transforming DocBook XML to " + targetName + ":")
+    s.log.debug("Using stylesheet: " + styleSheet)
     val mdbfFiles = if (!mdbf.isEmpty) mdbf else getMainDocBookFiles(docBookSource, sources)
     mdbfFiles map { mf =>
       val tf = makeTargetFile(mf, t, ext)
-      transformDocBook(mf, tf, styleSheetBase + styleSheet, cp, s.log)
+      transformDocBook(mf, tf, styleSheet, cp, s.log)
       tf
     }
   }
   
   private def genericTaskMultiple(targetName: String)(mdbf: Seq[File],
-      docBookSource: File, sources: Seq[File], t: File,
-      styleSheetBase: String, styleSheet: String,
+      docBookSource: File, sources: Seq[File], t: File, styleSheet: String,
       cp: Classpath, s: TaskStreams) {
     s.log.info("Transforming DocBook XML to " + targetName + ":")
     val mdbfFiles = if (!mdbf.isEmpty) mdbf else getMainDocBookFiles(docBookSource, sources)
     mdbfFiles foreach { mf =>
-      transformDocBookMultiple(mf, t, styleSheetBase + styleSheet, cp, s.log)
+      transformDocBookMultiple(mf, t, styleSheet, cp, s.log)
     }
   }
   
   private def makeGenericTask(targetName: String, ext: String,
       styleSheet: SettingKey[String]): Initialize[Task[Seq[File]]] =
     (mainDocBookFiles, docBookSourceDirectory, sourceDirectories in Compile,
-        target, docBookStyleSheetBase, styleSheet,
-        externalDependencyClasspath in Compile, streams) map
+        target, styleSheet, externalDependencyClasspath in Compile, streams) map
         genericTask(targetName, ext)
   
   private def makeGenericTaskMultiple(targetName: String,
       styleSheet: SettingKey[String]): Initialize[Task[Unit]] =
     (mainDocBookFiles, docBookSourceDirectory, sourceDirectories in Compile,
-        target, docBookStyleSheetBase, styleSheet,
-        externalDependencyClasspath in Compile, streams) map
+        target, styleSheet, externalDependencyClasspath in Compile, streams) map
         genericTaskMultiple(targetName)
   
   override val settings = inConfig(DocBook)(Seq(
@@ -278,21 +275,21 @@ object DocBookPlugin extends Plugin {
     //to your local hard drive and override these settings to speed up
     //transformation significantly
     docBookStyleSheetBase := "http://docbook.sourceforge.net/release/xsl/current/",
-    docBookXslFoStyleSheet := "fo/docbook.xsl",
-    docBookHtmlStyleSheet := "html/docbook.xsl",
-    docBookHtmlChunkStyleSheet := "html/chunk.xsl",
-    docBookHtmlOnechunkStyleSheet := "html/onechunk.xsl",
-    docBookXHtmlStyleSheet := "xhtml/docbook.xsl",
-    docBookXHtmlChunkStyleSheet := "xhtml/chunk.xsl",
-    docBookXHtmlOnechunkStyleSheet := "xhtml/onechunk.xsl",
-    docBookXHtml11StyleSheet := "xhtml-1_1/docbook.xsl",
-    docBookXHtml11ChunkStyleSheet := "xhtml-1_1/chunk.xsl",
-    docBookXHtml11OnechunkStyleSheet := "xhtml-1_1/onechunk.xsl",
-    docBookEpubStyleSheet := "epub/docbook.xsl",
-    docBookHtmlHelpStyleSheet := "htmlhelp/htmlhelp.xsl",
-    docBookJavaHelpStyleSheet := "javahelp/javahelp.xsl",
-    docBookEclipseHelpStyleSheet := "eclipse/eclipse.xsl",
-    docBookManpageStyleSheet := "manpages/docbook.xsl",
+    docBookXslFoStyleSheet <<= docBookStyleSheetBase(_ + "fo/docbook.xsl"),
+    docBookHtmlStyleSheet <<= docBookStyleSheetBase(_ + "html/docbook.xsl"),
+    docBookHtmlChunkStyleSheet <<= docBookStyleSheetBase(_ + "html/chunk.xsl"),
+    docBookHtmlOnechunkStyleSheet <<= docBookStyleSheetBase(_ + "html/onechunk.xsl"),
+    docBookXHtmlStyleSheet <<= docBookStyleSheetBase(_ + "xhtml/docbook.xsl"),
+    docBookXHtmlChunkStyleSheet <<= docBookStyleSheetBase(_ + "xhtml/chunk.xsl"),
+    docBookXHtmlOnechunkStyleSheet <<= docBookStyleSheetBase(_ + "xhtml/onechunk.xsl"),
+    docBookXHtml11StyleSheet <<= docBookStyleSheetBase(_ + "xhtml-1_1/docbook.xsl"),
+    docBookXHtml11ChunkStyleSheet <<= docBookStyleSheetBase(_ + "xhtml-1_1/chunk.xsl"),
+    docBookXHtml11OnechunkStyleSheet <<= docBookStyleSheetBase(_ + "xhtml-1_1/onechunk.xsl"),
+    docBookEpubStyleSheet <<= docBookStyleSheetBase(_ + "epub/docbook.xsl"),
+    docBookHtmlHelpStyleSheet <<= docBookStyleSheetBase(_ + "htmlhelp/htmlhelp.xsl"),
+    docBookJavaHelpStyleSheet <<= docBookStyleSheetBase(_ + "javahelp/javahelp.xsl"),
+    docBookEclipseHelpStyleSheet <<= docBookStyleSheetBase(_ + "eclipse/eclipse.xsl"),
+    docBookManpageStyleSheet <<= docBookStyleSheetBase(_ + "manpages/docbook.xsl"),
     
     //define tasks
     xslFoTask <<= makeGenericTask("XSL-FO", ".fo", docBookXslFoStyleSheet),
