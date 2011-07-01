@@ -31,7 +31,39 @@ object DocBookPlugin extends Plugin {
   val xslFoTask = TaskKey[Seq[File]]("xsl-fo",
       "Transforms DocBook XML files to XSL-FO files")
   val htmlTask = TaskKey[Seq[File]]("html",
-      "Transforms DocBook XML files to single HTML files")
+      "Transforms DocBook XML files to HTML files")
+  val htmlChunkTask = TaskKey[Unit]("html-chunk",
+      "Transforms DocBook XML files to HTML files (each one chunked " +
+      "into multiple files)")
+  val htmlOnechunkTask = TaskKey[Unit]("html-onechunk",
+      "Transforms DocBook XML files to HTML files (chunked output " +
+      "in single files)")
+  val xhtmlTask = TaskKey[Seq[File]]("xhtml",
+      "Transforms DocBook XML files to XHTML files")
+  val xhtmlChunkTask = TaskKey[Unit]("xhtml-chunk",
+      "Transforms DocBook XML files to XHTML files (each one chunked " +
+      "into multiple files)")
+  val xhtmlOnechunkTask = TaskKey[Unit]("xhtml-onechunk",
+      "Transforms DocBook XML files to XHTML files (chunked output " +
+      "in single files)")
+  val xhtml11Task = TaskKey[Seq[File]]("xhtml11",
+      "Transforms DocBook XML files to XHTML 1.1 files")
+  val xhtml11ChunkTask = TaskKey[Unit]("xhtml11-chunk",
+      "Transforms DocBook XML files to XHTML 1.1 files (each one chunked " +
+      "into multiple files)")
+  val xhtml11OnechunkTask = TaskKey[Unit]("xhtml11-onechunk",
+      "Transforms DocBook XML files to XHTML 1.1 files (chunked output " +
+      "in single files)")
+  val epubTask = TaskKey[Unit]("epub",
+      "Transforms DocBook XML files to EPUB files")
+  val htmlHelpTask = TaskKey[Unit]("html-help",
+      "Transforms DocBook XML files to HTML Help files")
+  val javaHelpTask = TaskKey[Unit]("java-help",
+      "Transforms DocBook XML files to JavaHelp files")
+  val eclipseHelpTask = TaskKey[Unit]("eclipse-help",
+      "Transforms DocBook XML files to Eclipse Help files")
+  val manpageTask = TaskKey[Unit]("manpage",
+      "Transforms DocBook XML files to man pages")
   val pdfTask = TaskKey[Seq[File]]("pdf",
       "Transforms DocBook XML files to PDF files (using FOP)")
   
@@ -42,6 +74,19 @@ object DocBookPlugin extends Plugin {
   val docBookStyleSheetBase = SettingKey[String]("docbook-stylesheet-base")
   val docBookXslFoStyleSheet = SettingKey[String]("docbook-xslfo-stylesheet")
   val docBookHtmlStyleSheet = SettingKey[String]("docbook-html-stylesheet")
+  val docBookHtmlChunkStyleSheet = SettingKey[String]("docbook-htmlchunk-stylesheet")
+  val docBookHtmlOnechunkStyleSheet = SettingKey[String]("docbook-htmlonechunk-stylesheet")
+  val docBookXHtmlStyleSheet = SettingKey[String]("docbook-xhtml-stylesheet")
+  val docBookXHtmlChunkStyleSheet = SettingKey[String]("docbook-xhtmlchunk-stylesheet")
+  val docBookXHtmlOnechunkStyleSheet = SettingKey[String]("docbook-xhtmlonechunk-stylesheet")
+  val docBookXHtml11StyleSheet = SettingKey[String]("docbook-xhtml11-stylesheet")
+  val docBookXHtml11ChunkStyleSheet = SettingKey[String]("docbook-xhtml11chunk-stylesheet")
+  val docBookXHtml11OnechunkStyleSheet = SettingKey[String]("docbook-xhtml11onechunk-stylesheet")
+  val docBookEpubStyleSheet = SettingKey[String]("docbook-epub-stylesheet")
+  val docBookHtmlHelpStyleSheet = SettingKey[String]("docbook-htmlhelp-stylesheet")
+  val docBookJavaHelpStyleSheet = SettingKey[String]("docbook-javahelp-stylesheet")
+  val docBookEclipseHelpStyleSheet = SettingKey[String]("docbook-eclipsehelp-stylesheet")
+  val docBookManpageStyleSheet = SettingKey[String]("docbook-manpage-stylesheet")
   
   /**
    * Returns the DocBook files to compile. Searches the directory
@@ -123,6 +168,34 @@ object DocBookPlugin extends Plugin {
   }
   
   /**
+   * Transforms the given DocBook XML file using the given stylesheet.
+   * Writes output files to a given directory.
+   * @param src the DocBook XML file
+   * @param target the target directory
+   * @param styleSheet an URI to a stylesheet or the name of a
+   * local stylesheet file
+   * @param cp the classpath required during transformation
+   * @param log the logger
+   */
+  private def transformDocBookMultiple(src: File, target: File,
+      styleSheet: String, cp: Classpath, log: Logger) {
+    log.info("  " + src.getName() + " ...")
+
+    val code = Fork.java(None, Seq[String](
+      "-cp", cp.files.mkString(File.pathSeparator),
+      "com.icl.saxon.StyleSheet",
+      "-x", "org.apache.xml.resolver.tools.ResolvingXMLReader",
+      "-y", "org.apache.xml.resolver.tools.ResolvingXMLReader",
+      "-r", "org.apache.xml.resolver.tools.CatalogResolver",
+      src.toString, styleSheet
+    ), Some(target), log)
+    
+    if (code != 0) {
+      error("Transformation did not succeed: " + code)
+    }
+  }
+  
+  /**
    * Transforms the given XSL-FOL file to a PDF file
    * @param src the XSL-FO file
    * @param dst the target PDF file
@@ -164,10 +237,21 @@ object DocBookPlugin extends Plugin {
       cp: Classpath, s: TaskStreams): Seq[File] = {
     s.log.info("Transforming DocBook XML to " + targetName + ":")
     val mdbfFiles = if (!mdbf.isEmpty) mdbf else getMainDocBookFiles(docBookSource, sources)
-    val conversions = mdbfFiles map { mf => (mf, makeTargetFile(mf, t, ext)) }
-    conversions map { c =>
-      transformDocBook(c._1, c._2, styleSheetBase + styleSheet, cp, s.log)
-      c._2
+    mdbfFiles map { mf =>
+      val tf = makeTargetFile(mf, t, ext)
+      transformDocBook(mf, tf, styleSheetBase + styleSheet, cp, s.log)
+      tf
+    }
+  }
+  
+  private def genericTaskMultiple(targetName: String)(mdbf: Seq[File],
+      docBookSource: File, sources: Seq[File], t: File,
+      styleSheetBase: String, styleSheet: String,
+      cp: Classpath, s: TaskStreams) {
+    s.log.info("Transforming DocBook XML to " + targetName + ":")
+    val mdbfFiles = if (!mdbf.isEmpty) mdbf else getMainDocBookFiles(docBookSource, sources)
+    mdbfFiles foreach { mf =>
+      transformDocBookMultiple(mf, t, styleSheetBase + styleSheet, cp, s.log)
     }
   }
   
@@ -177,6 +261,13 @@ object DocBookPlugin extends Plugin {
         target, docBookStyleSheetBase, styleSheet,
         externalDependencyClasspath in Compile, streams) map
         genericTask(targetName, ext)
+  
+  private def makeGenericTaskMultiple(targetName: String,
+      styleSheet: SettingKey[String]): Initialize[Task[Unit]] =
+    (mainDocBookFiles, docBookSourceDirectory, sourceDirectories in Compile,
+        target, docBookStyleSheetBase, styleSheet,
+        externalDependencyClasspath in Compile, streams) map
+        genericTaskMultiple(targetName)
   
   override val settings = inConfig(DocBook)(Seq(
     //define default values
@@ -189,10 +280,36 @@ object DocBookPlugin extends Plugin {
     docBookStyleSheetBase := "http://docbook.sourceforge.net/release/xsl/current/",
     docBookXslFoStyleSheet := "fo/docbook.xsl",
     docBookHtmlStyleSheet := "html/docbook.xsl",
+    docBookHtmlChunkStyleSheet := "html/chunk.xsl",
+    docBookHtmlOnechunkStyleSheet := "html/onechunk.xsl",
+    docBookXHtmlStyleSheet := "xhtml/docbook.xsl",
+    docBookXHtmlChunkStyleSheet := "xhtml/chunk.xsl",
+    docBookXHtmlOnechunkStyleSheet := "xhtml/onechunk.xsl",
+    docBookXHtml11StyleSheet := "xhtml-1_1/docbook.xsl",
+    docBookXHtml11ChunkStyleSheet := "xhtml-1_1/chunk.xsl",
+    docBookXHtml11OnechunkStyleSheet := "xhtml-1_1/onechunk.xsl",
+    docBookEpubStyleSheet := "epub/docbook.xsl",
+    docBookHtmlHelpStyleSheet := "htmlhelp/htmlhelp.xsl",
+    docBookJavaHelpStyleSheet := "javahelp/javahelp.xsl",
+    docBookEclipseHelpStyleSheet := "eclipse/eclipse.xsl",
+    docBookManpageStyleSheet := "manpages/docbook.xsl",
     
     //define tasks
     xslFoTask <<= makeGenericTask("XSL-FO", ".fo", docBookXslFoStyleSheet),
     htmlTask <<= makeGenericTask("HTML (single file)", ".html", docBookHtmlStyleSheet),
+    htmlChunkTask <<= makeGenericTaskMultiple("HTML (chunked)", docBookHtmlChunkStyleSheet),
+    htmlOnechunkTask <<= makeGenericTaskMultiple("HTML (chunked)", docBookHtmlOnechunkStyleSheet),
+    xhtmlTask <<= makeGenericTask("XHTML (single file)", ".html", docBookXHtmlStyleSheet),
+    xhtmlChunkTask <<= makeGenericTaskMultiple("XHTML (chunked)", docBookXHtmlChunkStyleSheet),
+    xhtmlOnechunkTask <<= makeGenericTaskMultiple("XHTML (chunked)", docBookXHtmlOnechunkStyleSheet),
+    xhtml11Task <<= makeGenericTask("XHTML 1.1 (single file)", ".html", docBookXHtml11StyleSheet),
+    xhtml11ChunkTask <<= makeGenericTaskMultiple("XHTML 1.1 (chunked)", docBookXHtml11ChunkStyleSheet),
+    xhtml11OnechunkTask <<= makeGenericTaskMultiple("XHTML 1.1 (chunked)", docBookXHtml11OnechunkStyleSheet),
+    epubTask <<= makeGenericTaskMultiple("EPUB", docBookEpubStyleSheet),
+    htmlHelpTask <<= makeGenericTaskMultiple("HTML Help", docBookHtmlHelpStyleSheet),
+    javaHelpTask <<= makeGenericTaskMultiple("JavaHelp", docBookJavaHelpStyleSheet),
+    eclipseHelpTask <<= makeGenericTaskMultiple("Eclipse Help", docBookEclipseHelpStyleSheet),
+    manpageTask <<= makeGenericTaskMultiple("man page", docBookManpageStyleSheet),
     
     //define pdf task
     pdfTask <<= (xslFoTask, target, externalDependencyClasspath in Compile,
@@ -225,6 +342,19 @@ object DocBookPlugin extends Plugin {
     
     xslFoTask <<= (xslFoTask in DocBook).identity,
     htmlTask <<= (htmlTask in DocBook).identity,
+    htmlChunkTask <<= (htmlChunkTask in DocBook).identity,
+    htmlOnechunkTask <<= (htmlOnechunkTask in DocBook).identity,
+    xhtmlTask <<= (xhtmlTask in DocBook).identity,
+    xhtmlChunkTask <<= (xhtmlChunkTask in DocBook).identity,
+    xhtmlOnechunkTask <<= (xhtmlOnechunkTask in DocBook).identity,
+    xhtml11Task <<= (xhtml11Task in DocBook).identity,
+    xhtml11ChunkTask <<= (xhtml11ChunkTask in DocBook).identity,
+    xhtml11OnechunkTask <<= (xhtml11OnechunkTask in DocBook).identity,
+    epubTask <<= (epubTask in DocBook).identity,
+    htmlHelpTask <<= (htmlHelpTask in DocBook).identity,
+    javaHelpTask <<= (javaHelpTask in DocBook).identity,
+    eclipseHelpTask <<= (eclipseHelpTask in DocBook).identity,
+    manpageTask <<= (manpageTask in DocBook).identity,
     pdfTask <<= (pdfTask in DocBook).identity
   )
 }
