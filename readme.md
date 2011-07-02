@@ -19,7 +19,6 @@ Usage
    `src/main/docbook`.
 4. In the same directory, create another subdirectory `project/plugins`. Create
    a file called `build.sbt` in this directory with the following contents:
-   
   <pre>
 //yet to be published:
 libraryDependencies += "de.undercouch" %% "sbt-docbook-plugin" % "1.0"
@@ -39,63 +38,67 @@ Change to your project's root directory and run one of the following commands:
 
 ### PDF
 
-`sbt pdf`
+    sbt pdf
 
 > Transforms DocBook XML files to PDF files
 
-`sbt xsl-fo`
+    sbt xsl-fo
 
 > Transforms DocBook XML files to XSL-FO files. Note that you can also use
 > the `sbt pdf` task to create PDF files directly.
 
 ### HTML
 
-`sbt html`
+    sbt html
 
 > Transforms DocBook XML files to HTML files
 
-`sbt html-chunk`
+    sbt html-chunk
 
 > Transforms DocBook XML files to HTML files (each one chunked into multiple
 > files)
 
-`sbt html-onechunk`
+    sbt html-onechunk
 
 > Transforms DocBook XML files to HTML files (chunked output in single files)
 
 ### XHTML
 
-`sbt xhtml`, `sbt xhtml-chunk`, `sbt xhtml-onechunk`
+    sbt xhtml
+    sbt xhtml-chunk
+    sbt xhtml-onechunk
 
 > Just like `sbt html`, `sbt html-chunk` and `sbt html-onechunk` but with
 > XHTML 1.0 output.
 
-`sbt xhtml11`, `sbt xhtml11-chunk`, `sbt xhtml11-onechunk`
+    sbt xhtml11
+    sbt xhtml11-chunk
+    sbt xhtml11-onechunk
 
 > Just like `sbt html`, `sbt html-chunk` and `sbt html-onechunk` but with
 > stricter XHTML 1.1 output.
 
 ### Open eBook
 
-`sbt epub`
+    sbt epub
 
 > Transforms DocBook XML files to Open eBook (EPUB) files
 
 ### Help formats
 
-`sbt html-help`
+    sbt html-help
 
 > Transforms DocBook XML files to HTML Help files
 
-`sbt java-help`
+    sbt java-help
 
 > Transforms DocBook XML files to JavaHelp files
 
-`sbt eclipse-help`
+    sbt eclipse-help
 
 > Transforms DocBook XML files to Eclipse Help files
 
-`sbt manpage`
+    sbt manpage
 
 > Transforms DocBook XML files to man pages
 
@@ -121,7 +124,7 @@ Example:
 Note that each setting must be written in its own line. Settings must be
 separated by a blank line.
 
-`mainDocBookFiles`
+    mainDocBookFiles
 
 > A sequence of source files. If you don't overwrite this setting, the plugin
 > will search the subdirectory `src/main/docbook` for `.xml` files. If it
@@ -129,12 +132,12 @@ separated by a blank line.
 > it uses the one called `main.xml` as the main source file. If you want to
 > convert multiple main source files, you have to override this setting.
 
-`docBookSourceDirectory`
+    docBookSourceDirectory
 
 > The default directory the plugin should search for `.xml` files. By default
 > this is `src/main/docbook`
 
-`docBookStyleSheetBase`
+    docBookStyleSheetBase
 
 > A directory or a URI where the DocBook stylesheets are stored. By default,
 > the plugin loads the stylesheets from the Internet dynamically. You can
@@ -142,14 +145,21 @@ separated by a blank line.
 > [download the files](http://sourceforge.net/projects/docbook/files/docbook-xsl/1.76.1/)
 > to your local hard drive.
 
-`docBookXslFoStyleSheet`,
-`docBookHtmlStyleSheet`, `docBookHtmlChunkStyleSheet`,
-`docBookHtmlOnechunkStyleSheet`, `docBookXHtmlStyleSheet`,
-`docBookXHtmlChunkStyleSheet`, `docBookXHtmlOnechunkStyleSheet`,
-`docBookXHtml11StyleSheet`, `docBookXHtml11ChunkStyleSheet`,
-`docBookXHtml11OnechunkStyleSheet`, `docBookEpubStyleSheet`,
-`docBookHtmlHelpStyleSheet`, `docBookJavaHelpStyleSheet`,
-`docBookEclipseHelpStyleSheet`, `docBookManpageStyleSheet`
+    docBookXslFoStyleSheet
+    docBookHtmlStyleSheet
+    docBookHtmlChunkStyleSheet
+    docBookHtmlOnechunkStyleSheet
+    docBookXHtmlStyleSheet
+    docBookXHtmlChunkStyleSheet
+    docBookXHtmlOnechunkStyleSheet
+    docBookXHtml11StyleSheet
+    docBookXHtml11ChunkStyleSheet
+    docBookXHtml11OnechunkStyleSheet
+    docBookEpubStyleSheet
+    docBookHtmlHelpStyleSheet
+    docBookJavaHelpStyleSheet
+    docBookEclipseHelpStyleSheet
+    docBookManpageStyleSheet
 
 > Override these settings to specify custom stylesheets for the particular
 > output formats.
