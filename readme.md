@@ -164,6 +164,14 @@ separated by a blank line.
 > Override these settings to specify custom stylesheets for the particular
 > output formats.
 
+    fopConfigFile
+
+> The name of [configuration file](http://xmlgraphics.apache.org/fop/1.0/configuration.html)
+> for Apache FOP. Use this file to configure PDF output. The plugin sets FOP's
+> base URL to the project's root directory. Thus, you may use URLs relative to
+> the project's root in the configuration file&mdash;e.g. to configure custom
+> fonts.
+
 Implementation details
 ----------------------
 

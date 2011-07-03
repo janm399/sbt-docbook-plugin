@@ -93,6 +93,8 @@ object DocBookPlugin extends Plugin {
   val docBookEclipseHelpStyleSheet = SettingKey[String]("docbook-eclipsehelp-stylesheet")
   val docBookManpageStyleSheet = SettingKey[String]("docbook-manpage-stylesheet")
   
+  val fopConfigFile = SettingKey[Option[String]]("fop-config-file")
+  
   private lazy val fopFactory = FopFactory.newInstance()
   
   /**
@@ -278,6 +280,7 @@ object DocBookPlugin extends Plugin {
     //define default values
     mainDocBookFiles := Seq.empty,
     docBookSourceDirectory <<= sourceDirectory(_ / "main" / "docbook"),
+    fopConfigFile := None,
     
     //default values for the docbook stylesheets. Download the stylesheets
     //to your local hard drive and override these settings to speed up
@@ -317,10 +320,15 @@ object DocBookPlugin extends Plugin {
     manpageTask <<= makeGenericTaskMultiple("man page", docBookManpageStyleSheet),
     
     //define pdf task
-    pdfTask <<= (xslFoTask, target, streams) map {
-      (xslFoFiles, t, s) =>
+    pdfTask <<= (xslFoTask, fopConfigFile, baseDirectory, target, streams) map {
+      (xslFoFiles, configFile, base, t, s) =>
       
       s.log.info("Transforming XSL-FO to PDF:")
+      
+      val baseUrlStr = base.toURI().toString()
+      fopFactory.setBaseURL(baseUrlStr)
+      configFile foreach fopFactory.setUserConfig
+      
       val conversions = xslFoFiles map { mf => (mf, makeTargetFile(mf, t, ".pdf")) }
       conversions foreach { c => transformXslFo(c._1, c._2) }
       
