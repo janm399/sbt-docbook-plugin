@@ -16,8 +16,13 @@ package de.undercouch.sbt.docbook
 
 import sbt._
 import Keys._
-import java.io.File
+import java.io.{BufferedOutputStream, File, FileOutputStream}
 import Project.Initialize
+import org.apache.fop.apps.{Fop, FopFactory}
+import org.apache.xmlgraphics.util.MimeConstants
+import javax.xml.transform.TransformerFactory
+import javax.xml.transform.stream.StreamSource
+import javax.xml.transform.sax.SAXResult
 
 /**
  * Provides tasks to compile DocBook XML files to various output formats
@@ -87,6 +92,8 @@ object DocBookPlugin extends Plugin {
   val docBookJavaHelpStyleSheet = SettingKey[String]("docbook-javahelp-stylesheet")
   val docBookEclipseHelpStyleSheet = SettingKey[String]("docbook-eclipsehelp-stylesheet")
   val docBookManpageStyleSheet = SettingKey[String]("docbook-manpage-stylesheet")
+  
+  private lazy val fopFactory = FopFactory.newInstance()
   
   /**
    * Returns the DocBook files to compile. Searches the directory
@@ -199,17 +206,18 @@ object DocBookPlugin extends Plugin {
    * Transforms the given XSL-FOL file to a PDF file
    * @param src the XSL-FO file
    * @param dst the target PDF file
-   * @param cp the classpath required during transformation
-   * @param log the logger
    */
-  private def transformXslFo(src: File, dst: File, cp: Classpath, log: Logger) {
-    transform(src, dst, log) {
-      Fork.java(None, Seq[String](
-        "-cp", cp.files.mkString(File.pathSeparator),
-        "org.apache.fop.cli.Main",
-        "-fo", src.toString,
-        "-pdf", dst.toString
-      ), log)
+  private def transformXslFo(src: File, dst: File) {
+    val out = new BufferedOutputStream(new FileOutputStream(dst))
+    try {
+      val fop = fopFactory.newFop(MimeConstants.MIME_PDF, out)
+      val tf = TransformerFactory.newInstance()
+      val transformer = tf.newTransformer()
+      val s = new StreamSource(src)
+      val res = new SAXResult(fop.getDefaultHandler())
+      transformer.transform(s, res)
+    } finally {
+      out.close()
     }
   }
   
@@ -309,13 +317,12 @@ object DocBookPlugin extends Plugin {
     manpageTask <<= makeGenericTaskMultiple("man page", docBookManpageStyleSheet),
     
     //define pdf task
-    pdfTask <<= (xslFoTask, target, externalDependencyClasspath in Compile,
-        streams) map {
-      (xslFoFiles, t, cp, s) =>
+    pdfTask <<= (xslFoTask, target, streams) map {
+      (xslFoFiles, t, s) =>
       
       s.log.info("Transforming XSL-FO to PDF:")
       val conversions = xslFoFiles map { mf => (mf, makeTargetFile(mf, t, ".pdf")) }
-      conversions foreach { c => transformXslFo(c._1, c._2, cp, s.log) }
+      conversions foreach { c => transformXslFo(c._1, c._2) }
       
       conversions map { _._2 }
     }
@@ -326,8 +333,7 @@ object DocBookPlugin extends Plugin {
       "saxon" % "saxon" % "6.5.3",
       "xml-resolver" % "xml-resolver" % "1.2",
       "net.sf.docbook" % "docbook-xsl" % "1.76.1",
-      "net.sf.docbook" % "docbook-xsl-saxon" % "1.0.0",
-      "org.apache.xmlgraphics" % "fop" % "1.0"
+      "net.sf.docbook" % "docbook-xsl-saxon" % "1.0.0"
     ),
     
     //add source directory for DocBook XML files

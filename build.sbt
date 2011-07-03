@@ -7,3 +7,5 @@ organization := "de.undercouch"
 version := "0.1"
 
 publishMavenStyle := true
+
+libraryDependencies += "org.apache.xmlgraphics" % "fop" % "1.0"
