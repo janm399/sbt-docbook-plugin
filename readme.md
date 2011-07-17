@@ -28,7 +28,7 @@ libraryDependencies += "de.undercouch" %% "sbt-docbook-plugin" % "1.0"
 
 This files will be written to the `target` subdirectory.
 
-You can also have a look at the [examples](https://github.com/michel-kraemer/sbt-docbook-plugin/tree/master/examples)
+You can also have a look at the [examples](https://github.com/michel-kraemer/sbt-docbook-plugin/tree/master/src/sbt-test/docbook)
 directory to get a better starting point.
 
 Tasks
