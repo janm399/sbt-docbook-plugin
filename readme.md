@@ -20,8 +20,9 @@ Usage
 4. In the same directory, create another subdirectory `project/plugins`. Create
    a file called `build.sbt` in this directory with the following contents:
   <pre>
-//yet to be published:
-libraryDependencies += "de.undercouch" %% "sbt-docbook-plugin" % "1.0"
+  resolvers += ScalaToolsSnapshots
+    
+    libraryDependencies += "de.undercouch" %% "sbt-docbook-plugin" % "0.2-SNAPSHOT"
 </pre>
 5. Write a DocBook file
 6. Execute one of the sbt tasks below and have fun!
