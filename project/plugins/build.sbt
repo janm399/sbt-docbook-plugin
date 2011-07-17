@@ -4,6 +4,10 @@ resolvers += {
   Resolver.url("Typesafe Repository", typesafeRepoUrl)(pattern)
 }
 
-libraryDependencies <<= (libraryDependencies, sbtVersion) { (deps, version) => 
-  deps :+ ("com.typesafe.sbteclipse" %% "sbteclipse" % "1.1" extra("sbtversion" -> version))
+libraryDependencies <+= (sbtVersion) { (version) =>
+  "com.typesafe.sbteclipse" %% "sbteclipse" % "1.1" extra("sbtversion" -> version)
+}
+
+libraryDependencies <+= (sbtVersion) { (version) =>
+  "org.scala-tools.sbt" %% "scripted-plugin" % version
 }
