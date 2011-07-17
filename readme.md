@@ -173,6 +173,16 @@ separated by a blank line.
 > the project's root in the configuration file&mdash;e.g. to configure custom
 > fonts.
 
+TODO
+----
+
+The plugin is currently in a very early stage. There are plenty things
+to do. Here's a list of what I'd like to see the most:
+
+* Support images and other external files correctly
+* Create a toolchain for AsciiDoc -> DocBook -> FOP
+* ...
+
 Implementation details
 ----------------------
 
