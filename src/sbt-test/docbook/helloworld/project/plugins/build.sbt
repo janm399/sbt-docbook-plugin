@@ -1,1 +1,1 @@
-libraryDependencies += "de.undercouch" %% "sbt-docbook-plugin" % "0.1-SNAPSHOT"
+libraryDependencies += "de.undercouch" %% "sbt-docbook-plugin" % "0.2-SNAPSHOT"
