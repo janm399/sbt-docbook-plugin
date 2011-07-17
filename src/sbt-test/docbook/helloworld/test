@@ -1,0 +1,57 @@
+$ absent target/helloworld.fo
+> xsl-fo
+$ exists target/helloworld.fo
+$ delete target/helloworld.fo
+
+$ absent target/helloworld.fo
+$ absent target/helloworld.pdf
+> pdf
+$ exists target/helloworld.fo
+$ exists target/helloworld.pdf
+$ delete target/helloworld.fo
+$ delete target/helloworld.pdf
+
+$ absent target/helloworld.html
+> html
+$ exists target/helloworld.html
+$ delete target/helloworld.html
+
+$ absent target/index.html
+> html-chunk
+$ exists target/index.html
+$ delete target/index.html
+
+$ absent target/index.html
+> html-onechunk
+$ exists target/index.html
+$ delete target/index.html
+
+$ absent target/helloworld.html
+> xhtml
+$ exists target/helloworld.html
+$ delete target/helloworld.html
+
+$ absent target/index.html
+> xhtml-chunk
+$ exists target/index.html
+$ delete target/index.html
+
+$ absent target/index.html
+> xhtml-onechunk
+$ exists target/index.html
+$ delete target/index.html
+
+$ absent target/helloworld.html
+> xhtml11
+$ exists target/helloworld.html
+$ delete target/helloworld.html
+
+$ absent target/index.html
+> xhtml11-chunk
+$ exists target/index.html
+$ delete target/index.html
+
+$ absent target/index.html
+> xhtml11-onechunk
+$ exists target/index.html
+$ delete target/index.html

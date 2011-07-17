@@ -1,0 +1,9 @@
+$ absent target/file1.fo
+$ absent target/file2.fo
+$ absent target/file1.pdf
+$ absent target/file2.pdf
+> pdf
+$ exists target/file1.fo
+$ exists target/file2.fo
+$ exists target/file1.pdf
+$ exists target/file2.pdf

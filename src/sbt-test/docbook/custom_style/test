@@ -1,0 +1,5 @@
+$ absent target/custom_style.fo
+$ absent target/custom_style.pdf
+> pdf
+$ exists target/custom_style.fo
+$ exists target/custom_style.pdf
