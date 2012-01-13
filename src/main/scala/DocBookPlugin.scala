@@ -349,7 +349,7 @@ object DocBookPlugin extends Plugin {
       (docBookSourceDirectory in DocBook).identity,
     
     //watch .xml files
-    sourceFilter <<= sourceFilter(_ || "*.xml"),
+    includeFilter <<= includeFilter(_ || "*.xml"),
     
     xslFoTask <<= (xslFoTask in DocBook).identity,
     htmlTask <<= (htmlTask in DocBook).identity,
