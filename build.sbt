@@ -6,6 +6,8 @@ organization := "de.undercouch"
 
 version := "0.2-SNAPSHOT"
 
+scalaVersion := "2.9.1"
+
 libraryDependencies += "org.apache.xmlgraphics" % "fop" % "1.0"
 
 seq(scriptedSettings: _*)
