@@ -187,8 +187,8 @@ Implementation details
 ----------------------
 
 This plugin automatically downloads all libraries needed to transform your
-DocBook files. It uses the [SAXON XSLT processor](http://saxon.sourceforge.net)
-and [Apache FOP](http://xmlgraphics.apache.org/fop).
+DocBook files. It uses the [SAXON XSLT processor](http://saxon.sourceforge.net),
+ [Apache FOP](http://xmlgraphics.apache.org/fop) and [Xerces](http://xerces.apache.org/xerces2-j/).
 
 License
 -------
