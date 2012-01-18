@@ -1,5 +1,3 @@
-<?xml version="1.0" encoding="utf-8"?>
-<book xmlns="http://docbook.org/ns/docbook" version="5.0" xml:lang="en">
 <chapter>
     <title>Where it all begins</title>
     <table xml:id="ex.calstable" frame="all">

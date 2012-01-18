@@ -148,34 +148,34 @@ object DocBookPlugin extends Plugin {
    * @param log the logger
    */
   private def transformDocBook(src: File, dst: File, styleSheet: String,
-      cp: Classpath, log: Logger) {
+  cp: Classpath, log: Logger) {
     transform(src, dst, log) {
       //write output to temporary file. this avoids a bug in Saxon
       //that caused spaces in the output filename to be converted to
       //an escaped sequence (%20)
       val temp = File.createTempFile("sbt-docbook-plugin-", ".fo")
       val code = Fork.java(None, Seq[String](
-        "-cp", cp.files.mkString(File.pathSeparator),
-        "com.icl.saxon.StyleSheet",
-        "-x", "org.apache.xml.resolver.tools.ResolvingXMLReader",
-        "-y", "org.apache.xml.resolver.tools.ResolvingXMLReader",
-        "-r", "org.apache.xml.resolver.tools.CatalogResolver",
-        "-o", temp.toString,
+      "-cp", cp.files.mkString(File.pathSeparator),
+      "-Djavax.xml.parsers.DocumentBuilderFactory=org.apache.xerces.jaxp.DocumentBuilderFactoryImpl",
+      "-Djavax.xml.parsers.SAXParserFactory=org.apache.xerces.jaxp.SAXParserFactoryImpl",
+      "-Dorg.apache.xerces.xni.parser.XMLParserConfiguration=org.apache.xerces.parsers.XIncludeParserConfiguration",
+      "com.icl.saxon.StyleSheet",
+      "-o", temp.toString,
         src.toString, styleSheet
       ), log)
-      
+
       //copy temporary file to real output file
       temp #> dst !
-      
+
       //delete temporary file (if this files it will be deleted on exit)
       if (!temp.delete()) {
         temp.deleteOnExit()
       }
-      
+
       code
     }
   }
-  
+
   /**
    * Transforms the given DocBook XML file using the given stylesheet.
    * Writes output files to a given directory.
@@ -187,15 +187,14 @@ object DocBookPlugin extends Plugin {
    * @param log the logger
    */
   private def transformDocBookMultiple(src: File, target: File,
-      styleSheet: String, cp: Classpath, log: Logger) {
+  styleSheet: String, cp: Classpath, log: Logger) {
     log.info("  " + src.getName() + " ...")
-
     val code = Fork.java(None, Seq[String](
       "-cp", cp.files.mkString(File.pathSeparator),
+      "-Djavax.xml.parsers.DocumentBuilderFactory=org.apache.xerces.jaxp.DocumentBuilderFactoryImpl",
+      "-Djavax.xml.parsers.SAXParserFactory=org.apache.xerces.jaxp.SAXParserFactoryImpl",
+      "-Dorg.apache.xerces.xni.parser.XMLParserConfiguration=org.apache.xerces.parsers.XIncludeParserConfiguration",
       "com.icl.saxon.StyleSheet",
-      "-x", "org.apache.xml.resolver.tools.ResolvingXMLReader",
-      "-y", "org.apache.xml.resolver.tools.ResolvingXMLReader",
-      "-r", "org.apache.xml.resolver.tools.CatalogResolver",
       src.toString, styleSheet
     ), Some(target), log)
     
@@ -341,7 +340,8 @@ object DocBookPlugin extends Plugin {
       "saxon" % "saxon" % "6.5.3",
       "xml-resolver" % "xml-resolver" % "1.2",
       "net.sf.docbook" % "docbook-xsl" % "1.76.1",
-      "net.sf.docbook" % "docbook-xsl-saxon" % "1.0.0"
+      "net.sf.docbook" % "docbook-xsl-saxon" % "1.0.0",
+      "xerces" % "xercesImpl" % "2.10.0"
     ),
     
     //add source directory for DocBook XML files
