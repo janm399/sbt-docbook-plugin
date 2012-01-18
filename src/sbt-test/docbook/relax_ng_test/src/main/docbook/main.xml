@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<book xmlns="http://docbook.org/ns/docbook"
+      xmlns:xi="http://www.w3.org/2001/XInclude"
+        version="5.0" xml:lang="en">
+    <info>
+       <title>Wicked Cool</title>
+
+        <releaseinfo>Version 1.0</releaseinfo>
+
+        <authorgroup>
+            <author>
+                <personname>Ndidi</personname>
+            </author>
+        </authorgroup>
+    </info>
+
+    <preface>A Test Project.. Nothing more...</preface>
+
+    <xi:include href="chapter1.xml"/>
+
+
+    <appendix>
+        <title>Appendicitis</title>
+    </appendix>
+
+    <index>
+        <title>Le Index</title>
+    </index>
+</book>
