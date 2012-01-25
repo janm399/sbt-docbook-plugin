@@ -71,11 +71,14 @@ object DocBookPlugin extends Plugin {
       "Transforms DocBook XML files to man pages")
   val pdfTask = TaskKey[Seq[File]]("pdf",
       "Transforms DocBook XML files to PDF files (using FOP)")
+  val zipTask = TaskKey[Unit]("zipper",
+      "zips the output folder")
   
   //declare settings
   val mainDocBookFiles = SettingKey[Seq[File]]("main-docbook-files")
   val docBookSourceDirectory = SettingKey[File]("docbook-source-directory")
-  
+  val docBookTargetDirectory = SettingKey[File]("docbook-target-directory")
+
   val docBookStyleSheetBase = SettingKey[String]("docbook-stylesheet-base")
   val docBookXslFoStyleSheet = SettingKey[String]("docbook-xslfo-stylesheet")
   val docBookHtmlStyleSheet = SettingKey[String]("docbook-html-stylesheet")
@@ -156,9 +159,12 @@ object DocBookPlugin extends Plugin {
       val temp = File.createTempFile("sbt-docbook-plugin-", ".fo")
       val code = Fork.java(None, Seq[String](
       "-cp", cp.files.mkString(File.pathSeparator),
-      "-Djavax.xml.parsers.DocumentBuilderFactory=org.apache.xerces.jaxp.DocumentBuilderFactoryImpl",
-      "-Djavax.xml.parsers.SAXParserFactory=org.apache.xerces.jaxp.SAXParserFactoryImpl",
-      "-Dorg.apache.xerces.xni.parser.XMLParserConfiguration=org.apache.xerces.parsers.XIncludeParserConfiguration",
+      "-Djavax.xml.parsers.DocumentBuilderFactory="+
+        "org.apache.xerces.jaxp.DocumentBuilderFactoryImpl",
+      "-Djavax.xml.parsers.SAXParserFactory=" +
+        "org.apache.xerces.jaxp.SAXParserFactoryImpl",
+      "-Dorg.apache.xerces.xni.parser.XMLParserConfiguration=" +
+        "org.apache.xerces.parsers.XIncludeParserConfiguration",
       "com.icl.saxon.StyleSheet",
       "-o", temp.toString,
         src.toString, styleSheet
@@ -239,7 +245,7 @@ object DocBookPlugin extends Plugin {
     val o = (if (d == -1) n else n.substring(0, d)) + ext
     target / o
   }
-  
+
   private def genericTask(targetName: String, ext: String)(mdbf: Seq[File],
       docBookSource: File, sources: Seq[File], t: File, styleSheet: String,
       cp: Classpath, s: TaskStreams): Seq[File] = {
@@ -247,7 +253,11 @@ object DocBookPlugin extends Plugin {
     s.log.debug("Using stylesheet: " + styleSheet)
     val mdbfFiles = if (!mdbf.isEmpty) mdbf else getMainDocBookFiles(docBookSource, sources)
     mdbfFiles map { mf =>
+      s.log.info("****  mf:"+ mf.toString)
+      s.log.info("****   t:"+t.toString)
+      s.log.info("**** ext:"+ext.toString)
       val tf = makeTargetFile(mf, t, ext)
+      s.log.info("****  tf:"+tf.toString)
       transformDocBook(mf, tf, styleSheet, cp, s.log)
       tf
     }
@@ -256,30 +266,56 @@ object DocBookPlugin extends Plugin {
   private def genericTaskMultiple(targetName: String)(mdbf: Seq[File],
       docBookSource: File, sources: Seq[File], t: File, styleSheet: String,
       cp: Classpath, s: TaskStreams) {
+    t.mkdir()
     s.log.info("Transforming DocBook XML to " + targetName + ":")
     val mdbfFiles = if (!mdbf.isEmpty) mdbf else getMainDocBookFiles(docBookSource, sources)
     mdbfFiles foreach { mf =>
       transformDocBookMultiple(mf, t, styleSheet, cp, s.log)
     }
+
   }
-  
+
+  private def zipOutputDirectory(ext: String)(directoryToZip: File, t: File, s: TaskStreams) {
+
+    def recursiveListFiles(f: File): Array[File] = {
+      val these = f.listFiles
+      these ++ these.filter(_.isDirectory).flatMap(recursiveListFiles)
+    }
+
+//    def getFiles : Option[Array[File]] = {Option(recursiveListFiles(directoryToZip))}
+
+    s.log.info("Zipping " + directoryToZip.getAbsolutePath + " to " + t.getAbsolutePath)
+    val files = recursiveListFiles(directoryToZip)
+
+
+    val filesAndNames = files.zip(files map (f => f.getName))
+    val outputZip = t / (directoryToZip.getName + ext)
+    val result= IO.zip(filesAndNames, outputZip)
+
+    result
+  }
+
   private def makeGenericTask(targetName: String, ext: String,
       styleSheet: SettingKey[String]): Initialize[Task[Seq[File]]] =
     (mainDocBookFiles, docBookSourceDirectory, sourceDirectories in Compile,
-        target, styleSheet, externalDependencyClasspath in Compile, streams) map
+      target, styleSheet, externalDependencyClasspath in Compile, streams) map
         genericTask(targetName, ext)
   
   private def makeGenericTaskMultiple(targetName: String,
       styleSheet: SettingKey[String]): Initialize[Task[Unit]] =
     (mainDocBookFiles, docBookSourceDirectory, sourceDirectories in Compile,
-        target, styleSheet, externalDependencyClasspath in Compile, streams) map
+      docBookTargetDirectory, styleSheet, externalDependencyClasspath in Compile, streams) map
         genericTaskMultiple(targetName)
-  
+
+  private def makeZipOutputDirectory(ext: String = ".zip"): Initialize[Task[Unit]] =
+  (docBookTargetDirectory, target, streams) map zipOutputDirectory(ext)
+
   override val settings = inConfig(DocBook)(Seq(
     //define default values
     mainDocBookFiles := Seq.empty,
     docBookSourceDirectory <<= sourceDirectory(_ / "main" / "docbook"),
     fopConfigFile := None,
+    docBookTargetDirectory <<= target( _ / "doc_output"),
     
     //default values for the docbook stylesheets. Download the stylesheets
     //to your local hard drive and override these settings to speed up
@@ -300,7 +336,10 @@ object DocBookPlugin extends Plugin {
     docBookJavaHelpStyleSheet <<= docBookStyleSheetBase(_ + "javahelp/javahelp.xsl"),
     docBookEclipseHelpStyleSheet <<= docBookStyleSheetBase(_ + "eclipse/eclipse.xsl"),
     docBookManpageStyleSheet <<= docBookStyleSheetBase(_ + "manpages/docbook.xsl"),
-    
+
+    //define zip task
+    zipTask <<= makeZipOutputDirectory(),
+
     //define tasks
     xslFoTask <<= makeGenericTask("XSL-FO", ".fo", docBookXslFoStyleSheet),
     htmlTask <<= makeGenericTask("HTML (single file)", ".html", docBookHtmlStyleSheet),
@@ -312,13 +351,15 @@ object DocBookPlugin extends Plugin {
     xhtml11Task <<= makeGenericTask("XHTML 1.1 (single file)", ".html", docBookXHtml11StyleSheet),
     xhtml11ChunkTask <<= makeGenericTaskMultiple("XHTML 1.1 (chunked)", docBookXHtml11ChunkStyleSheet),
     xhtml11OnechunkTask <<= makeGenericTaskMultiple("XHTML 1.1 (chunked)", docBookXHtml11OnechunkStyleSheet),
-    epubTask <<= makeGenericTaskMultiple("EPUB", docBookEpubStyleSheet),
     htmlHelpTask <<= makeGenericTaskMultiple("HTML Help", docBookHtmlHelpStyleSheet),
     javaHelpTask <<= makeGenericTaskMultiple("JavaHelp", docBookJavaHelpStyleSheet),
     eclipseHelpTask <<= makeGenericTaskMultiple("Eclipse Help", docBookEclipseHelpStyleSheet),
     manpageTask <<= makeGenericTaskMultiple("man page", docBookManpageStyleSheet),
-    
-    //define pdf task
+
+    //define epub task
+    epubTask <<= makeGenericTaskMultiple("EPUB", docBookEpubStyleSheet),
+
+      //define pdf task
     pdfTask <<= (xslFoTask, fopConfigFile, baseDirectory, target, streams) map {
       (xslFoFiles, configFile, base, t, s) =>
       
@@ -366,6 +407,7 @@ object DocBookPlugin extends Plugin {
     javaHelpTask <<= (javaHelpTask in DocBook).identity,
     eclipseHelpTask <<= (eclipseHelpTask in DocBook).identity,
     manpageTask <<= (manpageTask in DocBook).identity,
-    pdfTask <<= (pdfTask in DocBook).identity
+    pdfTask <<= (pdfTask in DocBook).identity,
+    zipTask <<= (zipTask in DocBook).identity
   )
 }
