@@ -73,7 +73,9 @@ object DocBookPlugin extends Plugin {
       "Transforms DocBook XML files to PDF files (using FOP)")
   val zipTask = TaskKey[Unit]("zipper",
       "zips the output folder")
-  
+  val epubTaskComplete = TaskKey[Seq[File]]("complete-epub",
+      "Transforms and zips up epub")
+
   //declare settings
   val mainDocBookFiles = SettingKey[Seq[File]]("main-docbook-files")
   val docBookSourceDirectory = SettingKey[File]("docbook-source-directory")
@@ -282,13 +284,9 @@ object DocBookPlugin extends Plugin {
       these ++ these.filter(_.isDirectory).flatMap(recursiveListFiles)
     }
 
-//    def getFiles : Option[Array[File]] = {Option(recursiveListFiles(directoryToZip))}
-
     s.log.info("Zipping " + directoryToZip.getAbsolutePath + " to " + t.getAbsolutePath)
     val files = recursiveListFiles(directoryToZip)
-
-
-    val filesAndNames = files.zip(files map (f => f.getName))
+    val filesAndNames = files.zip(files map (f => f.getAbsolutePath drop t.getAbsolutePath.length ))
     val outputZip = t / (directoryToZip.getName + ext)
     val result= IO.zip(filesAndNames, outputZip)
 
@@ -340,6 +338,7 @@ object DocBookPlugin extends Plugin {
     //define zip task
     zipTask <<= makeZipOutputDirectory(),
 
+
     //define tasks
     xslFoTask <<= makeGenericTask("XSL-FO", ".fo", docBookXslFoStyleSheet),
     htmlTask <<= makeGenericTask("HTML (single file)", ".html", docBookHtmlStyleSheet),
@@ -358,6 +357,12 @@ object DocBookPlugin extends Plugin {
 
     //define epub task
     epubTask <<= makeGenericTaskMultiple("EPUB", docBookEpubStyleSheet),
+
+//    epubTaskComplete <<= (epubTask, zipTask, streams) map {
+//      (epubFiles, zipper, s) =>
+//
+//    }
+
 
       //define pdf task
     pdfTask <<= (xslFoTask, fopConfigFile, baseDirectory, target, streams) map {
