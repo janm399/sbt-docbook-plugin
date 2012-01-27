@@ -391,9 +391,6 @@ object DocBookPlugin extends Plugin {
     unmanagedSourceDirectories in Compile <+=
       (docBookSourceDirectory in DocBook).identity,
     
-    //watch .xml files
-    includeFilter <<= includeFilter(_ || "*.xml"),
-    
     xslFoTask <<= (xslFoTask in DocBook).identity,
     htmlTask <<= (htmlTask in DocBook).identity,
     htmlChunkTask <<= (htmlChunkTask in DocBook).identity,
