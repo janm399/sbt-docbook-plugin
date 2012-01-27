@@ -59,22 +59,22 @@ object DocBookPlugin extends Plugin {
   val xhtml11OnechunkTask = TaskKey[Unit]("xhtml11-onechunk",
       "Transforms DocBook XML files to XHTML 1.1 files (chunked output " +
       "in single files)")
-  val epubTask = TaskKey[Unit]("epub",
-      "Transforms DocBook XML files to EPUB files")
+  val epubTask= TaskKey[Unit]("epub",
+    "Transforms and zips up epub")
+  val epubGenerateTask = TaskKey[Unit]("epub-generate",
+  "Transforms DocBook XML files to EPUB files")
   val htmlHelpTask = TaskKey[Unit]("html-help",
-      "Transforms DocBook XML files to HTML Help files")
+  "Transforms DocBook XML files to HTML Help files")
   val javaHelpTask = TaskKey[Unit]("java-help",
-      "Transforms DocBook XML files to JavaHelp files")
+  "Transforms DocBook XML files to JavaHelp files")
   val eclipseHelpTask = TaskKey[Unit]("eclipse-help",
-      "Transforms DocBook XML files to Eclipse Help files")
+  "Transforms DocBook XML files to Eclipse Help files")
   val manpageTask = TaskKey[Unit]("manpage",
-      "Transforms DocBook XML files to man pages")
+  "Transforms DocBook XML files to man pages")
   val pdfTask = TaskKey[Seq[File]]("pdf",
-      "Transforms DocBook XML files to PDF files (using FOP)")
+  "Transforms DocBook XML files to PDF files (using FOP)")
   val zipTask = TaskKey[Unit]("zipper",
-      "zips the output folder")
-  val epubTaskComplete = TaskKey[Seq[File]]("complete-epub",
-      "Transforms and zips up epub")
+  "zips the output folder")
 
   //declare settings
   val mainDocBookFiles = SettingKey[Seq[File]]("main-docbook-files")
@@ -278,19 +278,17 @@ object DocBookPlugin extends Plugin {
   }
 
   private def zipOutputDirectory(ext: String)(directoryToZip: File, t: File, s: TaskStreams) {
-
     def recursiveListFiles(f: File): Array[File] = {
       val these = f.listFiles
       these ++ these.filter(_.isDirectory).flatMap(recursiveListFiles)
     }
 
-    s.log.info("Zipping " + directoryToZip.getAbsolutePath + " to " + t.getAbsolutePath)
     val files = recursiveListFiles(directoryToZip)
+
     val filesAndNames = files.zip(files map (f => f.getAbsolutePath drop t.getAbsolutePath.length ))
     val outputZip = t / (directoryToZip.getName + ext)
-    val result= IO.zip(filesAndNames, outputZip)
-
-    result
+    s.log.info("Zipping to " + outputZip.getName)
+    IO.zip(filesAndNames, outputZip)
   }
 
   private def makeGenericTask(targetName: String, ext: String,
@@ -356,13 +354,12 @@ object DocBookPlugin extends Plugin {
     manpageTask <<= makeGenericTaskMultiple("man page", docBookManpageStyleSheet),
 
     //define epub task
-    epubTask <<= makeGenericTaskMultiple("EPUB", docBookEpubStyleSheet),
+    epubGenerateTask <<= makeGenericTaskMultiple("EPUB", docBookEpubStyleSheet),
 
-//    epubTaskComplete <<= (epubTask, zipTask, streams) map {
-//      (epubFiles, zipper, s) =>
-//
-//    }
-
+    epubTask <<= (epubGenerateTask, docBookTargetDirectory, target,streams) map {
+      (e, d, t, s) =>
+       zipOutputDirectory(".epub")(d, t, s)
+    },
 
       //define pdf task
     pdfTask <<= (xslFoTask, fopConfigFile, baseDirectory, target, streams) map {
@@ -412,7 +409,6 @@ object DocBookPlugin extends Plugin {
     javaHelpTask <<= (javaHelpTask in DocBook).identity,
     eclipseHelpTask <<= (eclipseHelpTask in DocBook).identity,
     manpageTask <<= (manpageTask in DocBook).identity,
-    pdfTask <<= (pdfTask in DocBook).identity,
-    zipTask <<= (zipTask in DocBook).identity
+    pdfTask <<= (pdfTask in DocBook).identity
   )
 }
