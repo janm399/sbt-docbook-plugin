@@ -1,11 +1,13 @@
-<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8" ?>
 <book xmlns="http://docbook.org/ns/docbook"
       xmlns:xi="http://www.w3.org/2001/XInclude"
-        version="5.0" xml:lang="en">
+      version="5.0" xml:lang="en" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:schemaLocation="http://docbook.org/ns/docbook ">
     <info>
-       <title>A Tabular Example</title>
+        <title>A Tabular Example</title>
     </info>
 
     <xi:include href="chapter1.xml"/>
 
+    <xi:include href="chapter2.xml"/>
 </book>

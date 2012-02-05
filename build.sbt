@@ -10,7 +10,12 @@ scalaVersion := "2.9.1"
 
 libraryDependencies ++= Seq(
 	"org.apache.xmlgraphics" % "fop" % "1.0",
-	"xerces" % "xercesImpl" % "2.10.0"
+	"xerces" % "xercesImpl" % "2.10.0",
+	"saxon" % "saxon" % "6.5.3",
+	"xml-resolver" % "xml-resolver" % "1.2",
+	"net.sf.docbook" % "docbook-xsl" % "1.76.1",
+	"net.sf.docbook" % "docbook-xsl-saxon" % "1.0.0",
+	"net.sf.xslthl" % "xslthl" % "2.0.2"
 	)
 
 seq(scriptedSettings: _*)

@@ -23,6 +23,7 @@ import org.apache.xmlgraphics.util.MimeConstants
 import javax.xml.transform.TransformerFactory
 import javax.xml.transform.stream.StreamSource
 import javax.xml.transform.sax.SAXResult
+import scala.io.Source
 
 /**
  * Provides tasks to compile DocBook XML files to various output formats
@@ -141,7 +142,14 @@ object DocBookPlugin extends Plugin {
       error("Creating " + dst.getName() + " did not succeed: " + code)
     }
   }
-  
+
+  def inputToFile(is: java.io.InputStream, f: java.io.File) {
+    val in = scala.io.Source.fromInputStream(is)
+    val out = new java.io.PrintWriter(f)
+    try { in.getLines().foreach(out.print(_)) }
+    finally { out.close }
+  }
+
   /**
    * Transforms the given DocBook XML file to another single file (using
    * the given stylesheet)
@@ -154,6 +162,10 @@ object DocBookPlugin extends Plugin {
    */
   private def transformDocBook(src: File, dst: File, styleSheet: String,
   cp: Classpath, log: Logger) {
+    val stream= getClass.getResourceAsStream("/cutomization.xml")
+    val customization  = new File ("cust.xml" )
+    inputToFile(stream,  customization)
+
     transform(src, dst, log) {
       //write output to temporary file. this avoids a bug in Saxon
       //that caused spaces in the output filename to be converted to
@@ -169,7 +181,7 @@ object DocBookPlugin extends Plugin {
         "org.apache.xerces.parsers.XIncludeParserConfiguration",
       "com.icl.saxon.StyleSheet",
       "-o", temp.toString,
-        src.toString, styleSheet
+        src.toString, customization.toString
       ), log)
 
       //copy temporary file to real output file
@@ -182,6 +194,9 @@ object DocBookPlugin extends Plugin {
 
       code
     }
+//    if (!customization.delete()) {
+//      customization.deleteOnExit()
+//    }
   }
 
   /**
@@ -255,11 +270,7 @@ object DocBookPlugin extends Plugin {
     s.log.debug("Using stylesheet: " + styleSheet)
     val mdbfFiles = if (!mdbf.isEmpty) mdbf else getMainDocBookFiles(docBookSource, sources)
     mdbfFiles map { mf =>
-      s.log.info("****  mf:"+ mf.toString)
-      s.log.info("****   t:"+t.toString)
-      s.log.info("**** ext:"+ext.toString)
       val tf = makeTargetFile(mf, t, ext)
-      s.log.info("****  tf:"+tf.toString)
       transformDocBook(mf, tf, styleSheet, cp, s.log)
       tf
     }
@@ -384,12 +395,15 @@ object DocBookPlugin extends Plugin {
       "xml-resolver" % "xml-resolver" % "1.2",
       "net.sf.docbook" % "docbook-xsl" % "1.76.1",
       "net.sf.docbook" % "docbook-xsl-saxon" % "1.0.0",
-      "xerces" % "xercesImpl" % "2.10.0"
+      "xerces" % "xercesImpl" % "2.10.0",
+      "net.sf.xslthl" % "xslthl" % "2.0.2"
     ),
     
     //add source directory for DocBook XML files
     unmanagedSourceDirectories in Compile <+=
       (docBookSourceDirectory in DocBook).identity,
+
+    resourceDirectory in Compile <<= javaSource in Compile,
     
     xslFoTask <<= (xslFoTask in DocBook).identity,
     htmlTask <<= (htmlTask in DocBook).identity,
