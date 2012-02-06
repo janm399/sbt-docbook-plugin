@@ -162,8 +162,8 @@ object DocBookPlugin extends Plugin {
    */
   private def transformDocBook(src: File, dst: File, styleSheet: String,
   cp: Classpath, log: Logger) {
-    val stream= getClass.getResourceAsStream("/cutomization.xml")
-    val customization  = new File ("cust.xml" )
+    val stream= getClass.getResourceAsStream("/foCustomization.xml")
+    val customization  = File.createTempFile("sbt-docbook-plugin-","cust.xml" )
     inputToFile(stream,  customization)
 
     transform(src, dst, log) {
@@ -181,7 +181,7 @@ object DocBookPlugin extends Plugin {
         "org.apache.xerces.parsers.XIncludeParserConfiguration",
       "com.icl.saxon.StyleSheet",
       "-o", temp.toString,
-        src.toString, customization.toString
+        src.toString, styleSheet
       ), log)
 
       //copy temporary file to real output file
@@ -194,9 +194,9 @@ object DocBookPlugin extends Plugin {
 
       code
     }
-//    if (!customization.delete()) {
-//      customization.deleteOnExit()
-//    }
+    if (!customization.delete()) {
+      customization.deleteOnExit()
+    }
   }
 
   /**
@@ -395,8 +395,8 @@ object DocBookPlugin extends Plugin {
       "xml-resolver" % "xml-resolver" % "1.2",
       "net.sf.docbook" % "docbook-xsl" % "1.76.1",
       "net.sf.docbook" % "docbook-xsl-saxon" % "1.0.0",
-      "xerces" % "xercesImpl" % "2.10.0",
-      "net.sf.xslthl" % "xslthl" % "2.0.2"
+      "xerces" % "xercesImpl" % "2.10.0"
+//      "net.sf.xslthl" % "xslthl" % "2.0.2"
     ),
     
     //add source directory for DocBook XML files
