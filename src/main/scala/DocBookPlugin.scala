@@ -32,7 +32,7 @@ import scala.io.Source
 object DocBookPlugin extends Plugin {
   //declare our own configuration scope
   val DocBook = config("DocBook") extend(Compile)
-  
+
   //declare tasks
   val xslFoTask = TaskKey[Seq[File]]("xsl-fo",
       "Transforms DocBook XML files to XSL-FO files")
@@ -98,11 +98,11 @@ object DocBookPlugin extends Plugin {
   val docBookJavaHelpStyleSheet = SettingKey[String]("docbook-javahelp-stylesheet")
   val docBookEclipseHelpStyleSheet = SettingKey[String]("docbook-eclipsehelp-stylesheet")
   val docBookManpageStyleSheet = SettingKey[String]("docbook-manpage-stylesheet")
-  
+
   val fopConfigFile = SettingKey[Option[String]]("fop-config-file")
-  
+
   private lazy val fopFactory = FopFactory.newInstance()
-  
+
   /**
    * Returns the DocBook files to compile. Searches the directory
    * denoted by <code>source</code> for XML files. If this directory does
@@ -124,7 +124,7 @@ object DocBookPlugin extends Plugin {
     }
     if (xmlFiles.size == 1) xmlFiles else Seq(source / "main.xml")
   }
-  
+
   /**
    * Runs a transformation from <code>src</code> to <code>dst</code>.
    * @param src the file to transform
@@ -135,9 +135,9 @@ object DocBookPlugin extends Plugin {
    */
   private def transform(src: File, dst: File, log: Logger)(doTransform: => Int) {
     log.info("  " + src.getName() + " to " + dst.getName() + " ...")
-    
+
     val code = doTransform
-    
+
     if (code != 0) {
       error("Creating " + dst.getName() + " did not succeed: " + code)
     }
@@ -162,9 +162,9 @@ object DocBookPlugin extends Plugin {
    */
   private def transformDocBook(src: File, dst: File, styleSheet: String,
   cp: Classpath, log: Logger) {
-    val stream= getClass.getResourceAsStream("/foCustomization.xml")
+    val stream= getClass.getResourceAsStream("/xhtmlCustomization.xml")
     val customization  = File.createTempFile("sbt-docbook-plugin-","cust.xml" )
-    inputToFile(stream,  customization)
+    inputToFile(stream, customization)
 
     transform(src, dst, log) {
       //write output to temporary file. this avoids a bug in Saxon
@@ -181,7 +181,7 @@ object DocBookPlugin extends Plugin {
         "org.apache.xerces.parsers.XIncludeParserConfiguration",
       "com.icl.saxon.StyleSheet",
       "-o", temp.toString,
-        src.toString, styleSheet
+        src.toString, customization.toString
       ), log)
 
       //copy temporary file to real output file
@@ -220,12 +220,12 @@ object DocBookPlugin extends Plugin {
       "com.icl.saxon.StyleSheet",
       src.toString, styleSheet
     ), Some(target), log)
-    
+
     if (code != 0) {
       error("Transformation did not succeed: " + code)
     }
   }
-  
+
   /**
    * Transforms the given XSL-FOL file to a PDF file
    * @param src the XSL-FO file
@@ -244,7 +244,7 @@ object DocBookPlugin extends Plugin {
       out.close()
     }
   }
-  
+
   /**
    * <p>Creates a target file out of the given source file. Uses the source
    * file's name, changes it extension to <code>ext</code> and puts that file
@@ -275,7 +275,7 @@ object DocBookPlugin extends Plugin {
       tf
     }
   }
-  
+
   private def genericTaskMultiple(targetName: String)(mdbf: Seq[File],
       docBookSource: File, sources: Seq[File], t: File, styleSheet: String,
       cp: Classpath, s: TaskStreams) {
@@ -307,7 +307,7 @@ object DocBookPlugin extends Plugin {
     (mainDocBookFiles, docBookSourceDirectory, sourceDirectories in Compile,
       target, styleSheet, externalDependencyClasspath in Compile, streams) map
         genericTask(targetName, ext)
-  
+
   private def makeGenericTaskMultiple(targetName: String,
       styleSheet: SettingKey[String]): Initialize[Task[Unit]] =
     (mainDocBookFiles, docBookSourceDirectory, sourceDirectories in Compile,
@@ -323,7 +323,7 @@ object DocBookPlugin extends Plugin {
     docBookSourceDirectory <<= sourceDirectory(_ / "main" / "docbook"),
     fopConfigFile := None,
     docBookTargetDirectory <<= target( _ / "doc_output"),
-    
+
     //default values for the docbook stylesheets. Download the stylesheets
     //to your local hard drive and override these settings to speed up
     //transformation significantly
@@ -375,16 +375,16 @@ object DocBookPlugin extends Plugin {
       //define pdf task
     pdfTask <<= (xslFoTask, fopConfigFile, baseDirectory, target, streams) map {
       (xslFoFiles, configFile, base, t, s) =>
-      
+
       s.log.info("Transforming XSL-FO to PDF:")
-      
+
       val baseUrlStr = base.toURI().toString()
       fopFactory.setBaseURL(baseUrlStr)
       configFile foreach fopFactory.setUserConfig
-      
+
       val conversions = xslFoFiles map { mf => (mf, makeTargetFile(mf, t, ".pdf")) }
       conversions foreach { c => transformXslFo(c._1, c._2) }
-      
+
       conversions map { _._2 }
     }
   )) ++
@@ -395,16 +395,16 @@ object DocBookPlugin extends Plugin {
       "xml-resolver" % "xml-resolver" % "1.2",
       "net.sf.docbook" % "docbook-xsl" % "1.76.1",
       "net.sf.docbook" % "docbook-xsl-saxon" % "1.0.0",
-      "xerces" % "xercesImpl" % "2.10.0"
-//      "net.sf.xslthl" % "xslthl" % "2.0.2"
+      "xerces" % "xercesImpl" % "2.10.0",
+      "net.sf.xslthl" % "xslthl" % "2.0.2"
     ),
-    
+
     //add source directory for DocBook XML files
     unmanagedSourceDirectories in Compile <+=
       (docBookSourceDirectory in DocBook).identity,
 
     resourceDirectory in Compile <<= javaSource in Compile,
-    
+
     xslFoTask <<= (xslFoTask in DocBook).identity,
     htmlTask <<= (htmlTask in DocBook).identity,
     htmlChunkTask <<= (htmlChunkTask in DocBook).identity,

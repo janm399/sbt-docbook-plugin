@@ -1,13 +1,32 @@
-<?xml version="1.0" encoding="utf-8" ?>
-<book xmlns="http://docbook.org/ns/docbook"
-      xmlns:xi="http://www.w3.org/2001/XInclude"
-      version="5.0" xml:lang="en" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-      xsi:schemaLocation="http://docbook.org/ns/docbook ">
+<?xml version="1.0" encoding="UTF-8"?>
+<book version="5.0" xmlns="http://docbook.org/ns/docbook"
+      xmlns:xi="http://www.w3.org/2001/XInclude">
     <info>
-        <title>A Tabular Example</title>
+        <title>X Include</title>
+
+        <subtitle>Proof that xinclude works lie a charm</subtitle>
+
+        <authorgroup>
+            <author>
+                <personname><firstname>Ndidi</firstname><surname>Alaneme</surname></personname>
+                <affiliation>
+                    <orgname>Cake Solutions</orgname>
+                    <address>Manchester - Oxford - London</address>
+                </affiliation>
+            </author>
+        </authorgroup>
+
+        <publisher>
+            <publishername>Github.com</publishername>
+            <address>1 World Wide Web Lane</address>
+        </publisher>
+
+        <releaseinfo>$Revision: 1.2 $</releaseinfo>
     </info>
 
-    <xi:include href="chapter1.xml"/>
+    <xi:include href="chapter1.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
 
-    <xi:include href="chapter2.xml"/>
+    <xi:include href="chapter2.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+
+    <index xml:id="index" />
 </book>
