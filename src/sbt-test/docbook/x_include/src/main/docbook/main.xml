@@ -21,7 +21,7 @@
             <address>1 World Wide Web Lane</address>
         </publisher>
 
-        <releaseinfo>$Revision: 1.2 $</releaseinfo>
+        <releaseinfo>0.4</releaseinfo>
     </info>
 
     <xi:include href="chapter1.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />

@@ -3,26 +3,24 @@
 
     <title>A Bewildering Bit of Java</title>
 
-    <section xml:id="ch1table">
-        <title>The Table</title>
+    <section xml:id="ch2code">
+        <title>The Code</title>
 
         <para>
             On the off chance that you expected something other than 'Hello, world!', sorry.
         </para>
-
-        <programlisting language="java">
-            /**
-            * Block comment
-            */
-            class HelloWorld {
-            public static void main(String[] args) {
-            System.out.println("Hello World!"); // Display the string.
-            }
-            }
-
-            /*
-            Comment
-            */
-        </programlisting>
+<programlisting language="java">
+  /**
+  * Block comment
+  */
+    class HelloWorld {
+      public static void main(String[] args) {
+        System.out.println("Hello World!"); // Display the string.
+      }
+    }
+  /*
+    Comment
+   */
+</programlisting>
     </section>
 </chapter>

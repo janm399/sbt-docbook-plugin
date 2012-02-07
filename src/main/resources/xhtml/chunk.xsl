@@ -1,10 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
-<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
-                xmlns:xslthl="http://xslthl.sf.net"
-                exclude-result-prefixes="xslthl"
-                version="1.0">
+<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
 
-    <xsl:import href="http://docbook.sourceforge.net/release/xsl/current/xhtml/docbook.xsl"/>
+    <xsl:import href="http://docbook.sourceforge.net/release/xsl/current/xhtml/chunk.xsl"/>
     <xsl:import href="http://docbook.sourceforge.net/release/xsl/current/xhtml/highlight.xsl"/>
 
     <xsl:param name="highlight.source" select="1"/>

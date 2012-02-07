@@ -1,9 +1,5 @@
-<?xml version="1.0" encoding="utf-8"?
-<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
-                xmlns:fo="http://www.w3.org/1999/XSL/Format"
-                xmlns:xslthl="http://xslthl.sf.net"
-                exclude-result-prefixes="xslthl"
-                version='1.0'>
+<?xml version="1.0" encoding="utf-8"?>
+<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
 
     <xsl:import href="http://docbook.sourceforge.net/release/xsl/current/fo/docbook.xsl"/>
     <xsl:import href="http://docbook.sourceforge.net/release/xsl/current/fo/highlight.xsl"/>
