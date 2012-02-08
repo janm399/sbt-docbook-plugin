@@ -162,24 +162,6 @@ object DocBookPlugin extends Plugin {
    */
   private def transformDocBook(src: File, dst: File, styleSheet: String,
   cp: Classpath, log: Logger) {
-    val stream= Option(getClass.getResourceAsStream(styleSheet))
-    var ss: String = ""
-    var customization = File.createTempFile("sbt-docbook-plugin-","cust.xml" )
-
-    stream match {
-      case Some (x) => {
-        inputToFile(x, customization)
-        ss = customization.toString
-      }
-      case None     => {
-        log.info("No local customization stylesheet was found..")
-        log.info("Using http://docbook.sourceforge.net/release/xsl/current"+styleSheet + "...")
-        ss = "http://docbook.sourceforge.net/release/xsl/current"+styleSheet
-      }
-    }
-
-    File.createTempFile("sbt-docbook-plugin-","cust.xml" )
-
     transform(src, dst, log) {
       //write output to temporary file. this avoids a bug in Saxon
       //that caused spaces in the output filename to be converted to
@@ -195,7 +177,7 @@ object DocBookPlugin extends Plugin {
         "org.apache.xerces.parsers.XIncludeParserConfiguration",
       "com.icl.saxon.StyleSheet",
       "-o", temp.toString,
-        src.toString, ss
+        src.toString, styleSheet
       ), log)
 
       //copy temporary file to real output file
@@ -207,9 +189,6 @@ object DocBookPlugin extends Plugin {
       }
 
       code
-    }
-    if (!customization.delete()) {
-      customization.deleteOnExit()
     }
   }
 
@@ -227,40 +206,17 @@ object DocBookPlugin extends Plugin {
   styleSheet: String, cp: Classpath, log: Logger) {
     log.info("  " + src.getName() + " ...")
 
-    val stream= Option(getClass.getResourceAsStream(styleSheet))
-    var ss: String = ""
-    var customization = File.createTempFile("sbt-docbook-plugin-","cust.xml" )
-
-    stream match {
-      case Some (x) => {
-        inputToFile(x, customization)
-        ss = customization.toString
-      }
-      case None     => {
-        log.info("No local customization stylesheet was found..")
-        log.info("Using http://docbook.sourceforge.net/release/xsl/current"+styleSheet + "...")
-        ss = "http://docbook.sourceforge.net/release/xsl/current"+styleSheet
-      }
-    }
-
-    File.createTempFile("sbt-docbook-plugin-","cust.xml" )
-
-
     val code = Fork.java(None, Seq[String](
       "-cp", cp.files.mkString(File.pathSeparator),
       "-Djavax.xml.parsers.DocumentBuilderFactory=org.apache.xerces.jaxp.DocumentBuilderFactoryImpl",
       "-Djavax.xml.parsers.SAXParserFactory=org.apache.xerces.jaxp.SAXParserFactoryImpl",
       "-Dorg.apache.xerces.xni.parser.XMLParserConfiguration=org.apache.xerces.parsers.XIncludeParserConfiguration",
       "com.icl.saxon.StyleSheet",
-      src.toString, ss
+      src.toString, styleSheet
     ), Some(target), log)
 
     if (code != 0) {
       error("Transformation did not succeed: " + code)
-    }
-
-    if (!customization.delete()) {
-      customization.deleteOnExit()
     }
   }
 
@@ -365,26 +321,25 @@ object DocBookPlugin extends Plugin {
     //default values for the docbook stylesheets. Download the stylesheets
     //to your local hard drive and override these settings to speed up
     //transformation significantly
-    docBookStyleSheetBase := "http://docbook.sourceforge.net/release/xsl/current",
-    docBookXslFoStyleSheet := "/fo/docbook.xsl",
-    docBookHtmlStyleSheet := "/html/docbook.xsl",
-    docBookHtmlChunkStyleSheet := "/html/chunk.xsl",
-    docBookHtmlOnechunkStyleSheet :=  "/html/onechunk.xsl",
-    docBookXHtmlStyleSheet := "/xhtml/docbook.xsl",
-    docBookXHtmlChunkStyleSheet := "/xhtml/chunk.xsl",
-    docBookXHtmlOnechunkStyleSheet := "/xhtml/onechunk.xsl",
-    docBookXHtml11StyleSheet := "/xhtml-1_1/docbook.xsl",
-    docBookXHtml11ChunkStyleSheet := "/xhtml-1_1/chunk.xsl",
-    docBookXHtml11OnechunkStyleSheet :=  "/xhtml-1_1/onechunk.xsl",
-    docBookEpubStyleSheet := "/epub/docbook.xsl",
-    docBookHtmlHelpStyleSheet :=  "/htmlhelp/htmlhelp.xsl",
-    docBookJavaHelpStyleSheet :=  "/javahelp/javahelp.xsl",
-    docBookEclipseHelpStyleSheet :=  "/eclipse/eclipse.xsl",
-    docBookManpageStyleSheet := "/manpages/docbook.xsl",
+    docBookStyleSheetBase := "http://docbook.sourceforge.net/release/xsl/current/",
+    docBookXslFoStyleSheet <<= docBookStyleSheetBase(_ + "fo/docbook.xsl"),
+    docBookHtmlStyleSheet <<= docBookStyleSheetBase(_ + "html/docbook.xsl"),
+    docBookHtmlChunkStyleSheet <<= docBookStyleSheetBase(_ + "html/chunk.xsl"),
+    docBookHtmlOnechunkStyleSheet <<= docBookStyleSheetBase(_ + "html/onechunk.xsl"),
+    docBookXHtmlStyleSheet <<= docBookStyleSheetBase(_ + "xhtml/docbook.xsl"),
+    docBookXHtmlChunkStyleSheet <<= docBookStyleSheetBase(_ + "xhtml/chunk.xsl"),
+    docBookXHtmlOnechunkStyleSheet <<= docBookStyleSheetBase(_ + "xhtml/onechunk.xsl"),
+    docBookXHtml11StyleSheet <<= docBookStyleSheetBase(_ + "xhtml-1_1/docbook.xsl"),
+    docBookXHtml11ChunkStyleSheet <<= docBookStyleSheetBase(_ + "xhtml-1_1/chunk.xsl"),
+    docBookXHtml11OnechunkStyleSheet <<= docBookStyleSheetBase(_ + "xhtml-1_1/onechunk.xsl"),
+    docBookEpubStyleSheet <<= docBookStyleSheetBase(_ + "epub/docbook.xsl"),
+    docBookHtmlHelpStyleSheet <<= docBookStyleSheetBase(_ + "htmlhelp/htmlhelp.xsl"),
+    docBookJavaHelpStyleSheet <<= docBookStyleSheetBase(_ + "javahelp/javahelp.xsl"),
+    docBookEclipseHelpStyleSheet <<= docBookStyleSheetBase(_ + "eclipse/eclipse.xsl"),
+    docBookManpageStyleSheet <<= docBookStyleSheetBase(_ + "manpages/docbook.xsl"),
 
     //define zip task
     zipTask <<= makeZipOutputDirectory(),
-
 
     //define tasks
     xslFoTask <<= makeGenericTask("XSL-FO", ".fo", docBookXslFoStyleSheet),
